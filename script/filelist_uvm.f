@@ -1,0 +1,14 @@
++incdir+../tb/interface
++incdir+../verif/seq
++incdir+../verif/agent
++incdir+../verif/env
++incdir+../verif/tests
+../rtl/tpu_mac_cell.sv
+../rtl/systolic_array_4x4.sv
+../rtl/mini_tpu_core.sv
+../rtl/mini_tpu_scratchpad.sv
+../rtl/mini_tpu_axi_lite.sv
+../sva/mini_tpu_axi_lite_sva.sv
+../tb/interface/mini_tpu_axi_if.sv
+../verif/pkg/mini_tpu_pkg.sv
+../verif/top/tb_mini_tpu_uvm.sv

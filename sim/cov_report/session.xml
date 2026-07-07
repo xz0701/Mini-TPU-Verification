@@ -1,0 +1,30 @@
+<session version="1.1" release="V-2023.12-SP2-1" timestp="2026-07-07 04:49:44 GMT">
+  <info>
+    <attr name="datetime" value="Tue Jul  7 00:50:17 2026
+"/>
+    <attr name="command" value="urg -dir simv.vdb -report cov_report"/>
+    <attr name="top_instance" value="tb_mini_tpu_uvm"/>
+  </info>
+  <hvp>
+    <datadef>
+      <metdef name="Group" type="percent" aggregator="average" builtin="1" />
+    </datadef>
+  </hvp>
+  <old_coverage>
+  <scope type="top" name="top">
+    <metric name="Group" value="50.0347%" />
+  </scope>
+  <scope type="instance" name="top">
+  </scope>
+  <scope type="group" name="top">
+    <scope type="group" name="mini_tpu_pkg::mini_tpu_cov::operation_cg">
+      <metric name="Group" value="40.625%" />
+    </scope>
+    <scope type="group" name="mini_tpu_pkg::mini_tpu_cov::matrix_cg">
+      <metric name="Group" value="59.4444%" />
+    </scope>
+  </scope>
+  <scope type="assert" name="Statistics">
+  </scope>
+  </old_coverage>
+</session>

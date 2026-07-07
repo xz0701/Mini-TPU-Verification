@@ -1,0 +1,9 @@
+sim/simv
+sim/simv.daidir/
+sim/csrc/
+sim/*.log
+sim/*.vpd
+sim/*.fsdb
+sim/ucli.key
+sim/DVEfiles/
+sim/inter.vpd

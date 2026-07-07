@@ -1,0 +1,2 @@
+\$unit::../rtl/mini_tpu_axi_lite.sv::../rtl/mini_tpu_core.sv...@14399301 02
+tb_mini_tpu_uvm2790

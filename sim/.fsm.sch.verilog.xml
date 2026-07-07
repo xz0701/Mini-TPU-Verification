@@ -1,0 +1,8 @@
+<Command name="schRTLInfo"  delimiter="."  >
+<RTLBlock >
+<RTLInfo   name="state_q_0"  type="2"  fileName="../rtl/mini_tpu_core.sv"  >
+    <Seg beginLine="46"  endLine="82"  />
+  </RTLInfo>
+ <Instance name="tb_mini_tpu_uvm.dut.u_core"  />
+</RTLBlock>
+ </Command>
