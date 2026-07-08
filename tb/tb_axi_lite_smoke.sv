@@ -1,10 +1,11 @@
 `timescale 1ns/1ps
+`include "mini_tpu_config.svh"
 
 module tb_axi_lite_smoke;
 
     localparam int ADDR_WIDTH = 12;
     localparam int DATA_WIDTH = 32;
-    localparam int ARRAY_SIZE = 4;
+    localparam int ARRAY_SIZE = `MINI_TPU_ARRAY_SIZE;
 
     localparam logic [ADDR_WIDTH-1:0] ADDR_CTRL   = 12'h000;
     localparam logic [ADDR_WIDTH-1:0] ADDR_STATUS = 12'h004;
@@ -92,7 +93,8 @@ module tb_axi_lite_smoke;
         check_c_over_axi();
 
         if (error_count == 0) begin
-            $display("[MINI_TPU_AXI_SMOKE] PASS: AXI-Lite programmed 4x4 TPU result matched expected data.");
+            $display("[MINI_TPU_AXI_SMOKE] PASS: AXI-Lite programmed %0dx%0d TPU result matched expected data.",
+                     ARRAY_SIZE, ARRAY_SIZE);
         end else begin
             $fatal(1, "[MINI_TPU_AXI_SMOKE] FAIL: %0d mismatches detected.", error_count);
         end
@@ -115,6 +117,13 @@ module tb_axi_lite_smoke;
     endtask
 
     task automatic init_matrices();
+        for (int row = 0; row < ARRAY_SIZE; row++) begin
+            for (int col = 0; col < ARRAY_SIZE; col++) begin
+                a_matrix[row][col] = '0;
+                b_matrix[row][col] = '0;
+            end
+        end
+
         a_matrix[0][0] =  1; a_matrix[0][1] =  2; a_matrix[0][2] =  3; a_matrix[0][3] =  4;
         a_matrix[1][0] = -1; a_matrix[1][1] =  0; a_matrix[1][2] =  2; a_matrix[1][3] =  1;
         a_matrix[2][0] =  3; a_matrix[2][1] = -2; a_matrix[2][2] =  1; a_matrix[2][3] =  0;

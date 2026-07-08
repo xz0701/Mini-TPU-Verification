@@ -5,7 +5,7 @@ class mini_tpu_axi_driver extends uvm_driver #(mini_tpu_item);
 
     `uvm_component_utils(mini_tpu_axi_driver)
 
-    localparam int ARRAY_SIZE = 4;
+    localparam int ARRAY_SIZE = `MINI_TPU_ARRAY_SIZE;
     localparam bit [11:0] ADDR_CTRL   = 12'h000;
     localparam bit [11:0] ADDR_A_BASE = 12'h100;
     localparam bit [11:0] ADDR_B_BASE = 12'h200;

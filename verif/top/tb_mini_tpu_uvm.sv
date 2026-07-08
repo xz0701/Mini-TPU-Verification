@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "mini_tpu_config.svh"
 
 module tb_mini_tpu_uvm;
 
@@ -20,7 +21,9 @@ module tb_mini_tpu_uvm;
         .rst_n (rst_n)
     );
 
-    mini_tpu_axi_lite dut (
+    mini_tpu_axi_lite #(
+        .ARRAY_SIZE(`MINI_TPU_ARRAY_SIZE)
+    ) dut (
         .clk_i         (clk),
         .rst_ni        (rst_n),
         .s_axi_awaddr  (axi_if.awaddr),

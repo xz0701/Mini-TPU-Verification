@@ -1,3 +1,4 @@
++incdir+../tb
 +incdir+../tb/interface
 +incdir+../verif/seq
 +incdir+../verif/agent

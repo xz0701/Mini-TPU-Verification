@@ -5,7 +5,7 @@ class mini_tpu_cov extends uvm_subscriber #(mini_tpu_item);
 
     `uvm_component_utils(mini_tpu_cov)
 
-    localparam int ARRAY_SIZE = 4;
+    localparam int ARRAY_SIZE = `MINI_TPU_ARRAY_SIZE;
 
     covergroup matrix_cg with function sample(
         int signed a_val,

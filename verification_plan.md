@@ -68,3 +68,27 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - `make regression`: directed systolic smoke, directed AXI smoke, and UVM smoke.
   - `make regression-cov`: UVM coverage run plus URG report generation.
 - Interview-safe summary: this extends the project from datapath correctness to a memory-mapped TPU subsystem, then uses SVA and regression gates to lock down control, protocol, and data-integrity behavior.
+
+## Milestone 7: Subsystem Negative and Stress Tests
+
+- Split UVM regression into focused tests instead of relying on one smoke sequence.
+- `mini_tpu_smoke_test`: end-to-end matrix cases with scoreboard and functional coverage.
+- `mini_tpu_mem_test`: scratchpad A/B readback, byte strobe behavior, and C-bank reset/read-before-compute behavior.
+- `mini_tpu_invalid_addr_test`: valid/invalid read/write address response checks, including read-only STATUS/C write attempts.
+- `mini_tpu_busy_write_test`: verifies A/B writes accepted during busy do not corrupt the in-flight compute or input banks.
+- Status: these tests are included in `mini_tpu_pkg.sv` and wired into `make regression`.
+
+## Milestone 8: 4x4 / 8x8 Parameter Scaling
+
+- Add a shared `MINI_TPU_ARRAY_SIZE` compile-time configuration.
+- Keep `ARRAY_SIZE=4` as the default quick regression target.
+- Enable 8x8 runs through the same RTL, AXI-Lite map, UVM item, driver, monitor, scoreboard, coverage, and subsystem tests.
+- The 8x8 address map uses the existing 12-bit windows exactly:
+  - A bank: `0x100` through `0x1ff`.
+  - B bank: `0x200` through `0x2ff`.
+  - C bank: `0x300` through `0x3ff`.
+- Run examples:
+  - `make regression`
+  - `make regression ARRAY_SIZE=8`
+  - `make regression-8x8`
+- Status: Makefile, directed testbenches, UVM top, and reusable UVM components now use the shared array-size configuration.

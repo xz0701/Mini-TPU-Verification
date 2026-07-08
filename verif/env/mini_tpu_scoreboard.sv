@@ -5,7 +5,7 @@ class mini_tpu_scoreboard extends uvm_component;
 
     `uvm_component_utils(mini_tpu_scoreboard)
 
-    localparam int ARRAY_SIZE = 4;
+    localparam int ARRAY_SIZE = `MINI_TPU_ARRAY_SIZE;
 
     uvm_analysis_imp #(mini_tpu_item, mini_tpu_scoreboard) item_collected_export;
     uvm_event done_ev;

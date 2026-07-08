@@ -1,8 +1,9 @@
 `timescale 1ns/1ps
+`include "mini_tpu_config.svh"
 
 module tb_systolic_smoke;
 
-    localparam int ARRAY_SIZE = 4;
+    localparam int ARRAY_SIZE = `MINI_TPU_ARRAY_SIZE;
     localparam int DATA_WIDTH = 8;
     localparam int ACC_WIDTH  = 32;
 
@@ -65,7 +66,8 @@ module tb_systolic_smoke;
         run_reset_during_compute_case();
 
         if (error_count == 0) begin
-            $display("[MINI_TPU_SMOKE] PASS: all directed 4x4 int8 systolic cases matched expected results.");
+            $display("[MINI_TPU_SMOKE] PASS: all directed %0dx%0d int8 systolic cases matched expected results.",
+                     ARRAY_SIZE, ARRAY_SIZE);
         end else begin
             $fatal(1, "[MINI_TPU_SMOKE] FAIL: %0d mismatches detected.", error_count);
         end
@@ -84,6 +86,8 @@ module tb_systolic_smoke;
     endtask
 
     task automatic load_mixed_signed_case();
+        clear_matrices();
+
         a_matrix[0][0] =  1; a_matrix[0][1] =  2; a_matrix[0][2] =  3; a_matrix[0][3] =  4;
         a_matrix[1][0] = -1; a_matrix[1][1] =  0; a_matrix[1][2] =  2; a_matrix[1][3] =  1;
         a_matrix[2][0] =  3; a_matrix[2][1] = -2; a_matrix[2][2] =  1; a_matrix[2][3] =  0;
@@ -114,6 +118,8 @@ module tb_systolic_smoke;
     endtask
 
     task automatic load_int8_edge_case();
+        clear_matrices();
+
         a_matrix[0][0] =  8'sd127; a_matrix[0][1] =  8'sh80;  a_matrix[0][2] =   8'sd1; a_matrix[0][3] =  -8'sd1;
         a_matrix[1][0] = -8'sd64;  a_matrix[1][1] =   8'sd63; a_matrix[1][2] =  8'sd32; a_matrix[1][3] = -8'sd32;
         a_matrix[2][0] =   8'sd0;  a_matrix[2][1] =  8'sd16; a_matrix[2][2] = -8'sd16; a_matrix[2][3] =  8'sd8;

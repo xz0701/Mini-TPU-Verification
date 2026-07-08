@@ -25,6 +25,8 @@ module mini_tpu_axi_lite_sva #(
     input logic                         s_axi_rready,
 
     input logic [ADDR_WIDTH-1:0]        aw_addr_q,
+    input logic [DATA_WIDTH-1:0]        w_data_q,
+    input logic [(DATA_WIDTH/8)-1:0]    w_strb_q,
     input logic                         aw_pending_q,
     input logic                         w_pending_q,
     input logic                         core_start,
@@ -45,6 +47,8 @@ module mini_tpu_axi_lite_sva #(
     localparam int DONE_BOUND_CYCLES = (3 * ARRAY_SIZE) + 4;
 
     wire write_fire = aw_pending_q && w_pending_q && !s_axi_bvalid;
+    wire ctrl_write_fire = write_fire && (aw_addr_q == ADDR_CTRL) && w_strb_q[0];
+    wire done_clear_fire = ctrl_write_fire && (w_data_q[1] || w_data_q[0]);
 
     default clocking cb @(posedge clk_i);
     endclocking
@@ -87,6 +91,23 @@ module mini_tpu_axi_lite_sva #(
         (s_axi_rvalid && !s_axi_rready) |=> (s_axi_rvalid &&
                                              $stable(s_axi_rdata) &&
                                              $stable(s_axi_rresp))
+    );
+
+    a_awaddr_stable_until_ready: assert property (
+        disable iff (!rst_ni)
+        (s_axi_awvalid && !s_axi_awready) |=> (s_axi_awvalid && $stable(s_axi_awaddr))
+    );
+
+    a_wdata_stable_until_ready: assert property (
+        disable iff (!rst_ni)
+        (s_axi_wvalid && !s_axi_wready) |=> (s_axi_wvalid &&
+                                             $stable(s_axi_wdata) &&
+                                             $stable(s_axi_wstrb))
+    );
+
+    a_araddr_stable_until_ready: assert property (
+        disable iff (!rst_ni)
+        (s_axi_arvalid && !s_axi_arready) |=> (s_axi_arvalid && $stable(s_axi_araddr))
     );
 
     a_write_resp_valid_addr: assert property (
@@ -136,6 +157,11 @@ module mini_tpu_axi_lite_sva #(
         core_done |=> done_sticky_q
     );
 
+    a_done_sticky_holds_until_clear: assert property (
+        disable iff (!rst_ni)
+        (done_sticky_q && !done_clear_fire) |=> done_sticky_q
+    );
+
     a_no_input_bank_write_while_busy: assert property (
         disable iff (!rst_ni)
         core_busy |-> (!a_bank_we && !b_bank_we)
@@ -168,6 +194,8 @@ bind mini_tpu_axi_lite mini_tpu_axi_lite_sva #(
     .s_axi_rvalid  (s_axi_rvalid),
     .s_axi_rready  (s_axi_rready),
     .aw_addr_q     (aw_addr_q),
+    .w_data_q      (w_data_q),
+    .w_strb_q      (w_strb_q),
     .aw_pending_q  (aw_pending_q),
     .w_pending_q   (w_pending_q),
     .core_start    (core_start),
