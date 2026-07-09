@@ -41,7 +41,7 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
 - Monitor: samples `done_o` and output matrix.
 - Scoreboard: computes golden matrix multiplication and compares output.
 - Coverage: value classes, matrix positions, output sign, and matrix value mix.
-- Status: first AXI-Lite UVM smoke files are in `verif/`; `mini_tpu_cov.sv` reports functional coverage in `run.log`.
+- Status: first AXI-Lite UVM smoke files are in `verif/`; `mini_tpu_cov.sv` reports functional coverage in the per-test run log.
 
 ## Milestone 4: Interface Expansion
 
@@ -92,3 +92,11 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - `make regression ARRAY_SIZE=8`
   - `make regression-8x8`
 - Status: Makefile, directed testbenches, UVM top, and reusable UVM components now use the shared array-size configuration.
+
+## Milestone 9: Regression Logging and Generic RTL Naming
+
+- Replace overwritten `compile.log` / `run.log` outputs with per-target logs:
+  - `compile_tb_mini_tpu_uvm_8x8_mini_tpu_smoke_test.log`
+  - `run_tb_mini_tpu_uvm_8x8_mini_tpu_smoke_test.log`
+- Rename the parameterized systolic array RTL from the 4x4-specific name to `systolic_array`.
+- Add `mini_tpu_8x8_stress_test` to exercise dense signed, sparse diagonal, and checkerboard matrices across the configured array size.

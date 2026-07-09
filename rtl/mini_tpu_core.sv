@@ -117,7 +117,7 @@ module mini_tpu_core #(
         end
     end
 
-    systolic_array_4x4 #(
+    systolic_array #(
         .ARRAY_SIZE(ARRAY_SIZE),
         .DATA_WIDTH(DATA_WIDTH),
         .ACC_WIDTH (ACC_WIDTH)

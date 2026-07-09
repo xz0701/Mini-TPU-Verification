@@ -1,4 +1,4 @@
-module systolic_array_4x4 #(
+module systolic_array #(
     parameter int ARRAY_SIZE = 4,
     parameter int DATA_WIDTH = 8,
     parameter int ACC_WIDTH  = 32

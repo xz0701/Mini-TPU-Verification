@@ -2,19 +2,25 @@
 
 Mini TPU RTL and verification project.
 
-The first milestone is a 4x4 signed int8 systolic-array matrix multiplication core. The project starts with a directed smoke test before growing into a UVM environment.
+The design is a parameterized signed int8 systolic-array matrix multiplication core with an AXI4-Lite scratchpad wrapper. The default quick configuration is 4x4, and the same RTL/UVM flow can run 8x8 with `ARRAY_SIZE=8`.
 
 ## Current Structure
 
 ```text
 rtl/
   tpu_mac_cell.sv
-  systolic_array_4x4.sv
+  systolic_array.sv
   mini_tpu_core.sv
+  mini_tpu_scratchpad.sv
+  mini_tpu_axi_lite.sv
 tb/
+  mini_tpu_config.svh
   tb_systolic_smoke.sv
+  tb_axi_lite_smoke.sv
 script/
   filelist.f
+  filelist_axi.f
+  filelist_uvm.f
 verif/
   agent/
   env/
@@ -33,6 +39,18 @@ If VCS is not already in `PATH`, use:
 
 ```sh
 make setup-run
+```
+
+Run the 8x8 configuration with:
+
+```sh
+make regression ARRAY_SIZE=8
+```
+
+or:
+
+```sh
+make regression-8x8
 ```
 
 ## Directed Cases
@@ -54,9 +72,17 @@ make setup-run
 ```text
 0x000 CTRL    bit0=start, bit1=clear done sticky
 0x004 STATUS  bit0=busy, bit1=done sticky
-0x100 A[0][0]..A[3][3], one signed int8 per 32-bit word
-0x200 B[0][0]..B[3][3], one signed int8 per 32-bit word
-0x300 C[0][0]..C[3][3], one signed int32 per 32-bit word
+0x100 A bank, one signed int8 per 32-bit word
+0x200 B bank, one signed int8 per 32-bit word
+0x300 C bank, one signed int32 per 32-bit word
+```
+
+For 8x8, each bank uses 64 words, so the existing 12-bit map covers:
+
+```text
+A: 0x100 - 0x1ff
+B: 0x200 - 0x2ff
+C: 0x300 - 0x3ff
 ```
 
 Run the AXI-Lite directed smoke with:
@@ -75,7 +101,15 @@ make uvm-setup-run
 
 The UVM sequence writes A/B matrices, starts the TPU through `CTRL`, waits for `STATUS.done`, reads C, and checks the result in the scoreboard.
 
-Functional coverage is printed in `run.log` by `mini_tpu_cov`.
+Functional coverage is printed by `mini_tpu_cov` in the per-test run log.
+
+Regression runs use per-target logs instead of overwriting one file. Examples:
+
+```text
+sim/run_tb_systolic_smoke_8x8.log
+sim/run_tb_mini_tpu_uvm_8x8_mini_tpu_smoke_test.log
+sim/run_tb_mini_tpu_uvm_8x8_mini_tpu_8x8_stress_test.log
+```
 
 For VCS code coverage:
 

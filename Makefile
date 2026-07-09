@@ -7,6 +7,9 @@ UVM_OPTS ?=
 COV_OPTS ?=
 COV_RUN_OPTS ?=
 DEFINE_OPTS ?= +define+MINI_TPU_ARRAY_SIZE=$(ARRAY_SIZE)
+RUN_TAG ?= $(TOP)_$(ARRAY_SIZE)x$(ARRAY_SIZE)$(if $(TEST),_$(TEST),)
+COMPILE_LOG ?= compile_$(RUN_TAG).log
+RUN_LOG ?= run_$(RUN_TAG).log
 
 VCS_OPTS = -full64 \
            -sverilog \
@@ -16,12 +19,12 @@ VCS_OPTS = -full64 \
            -timescale=1ns/1ps \
            -debug_access+all \
            -top $(TOP) \
-           -l compile.log
+           -l $(COMPILE_LOG)
 
 TEST    ?=
 UVM_TEST ?= mini_tpu_smoke_test
 
-SIM_OPTS = $(if $(TEST),+UVM_TESTNAME=$(TEST),) $(COV_RUN_OPTS) -l run.log
+SIM_OPTS = $(if $(TEST),+UVM_TESTNAME=$(TEST),) $(COV_RUN_OPTS) -l $(RUN_LOG)
 
 all: run
 
@@ -65,6 +68,7 @@ regression:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_mem_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_invalid_addr_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_busy_write_test'
+	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_8x8_stress_test'
 
 regression-cov:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-run'
