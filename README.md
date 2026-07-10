@@ -24,6 +24,7 @@ script/
 verif/
   agent/
   env/
+  ral/
   seq/
   tests/
   top/
@@ -102,6 +103,22 @@ make uvm-setup-run
 The UVM sequence writes A/B matrices, starts the TPU through `CTRL`, waits for `STATUS.done`, reads C, and checks the result in the scoreboard.
 
 Functional coverage is printed by `mini_tpu_cov` in the per-test run log.
+
+The UVM environment also includes a RAL model:
+
+```text
+CTRL       0x000, write-only start / clear-done fields
+STATUS     0x004, read-only busy / done fields
+A memory   0x100, RW scratchpad bank
+B memory   0x200, RW scratchpad bank
+C memory   0x300, RO result bank
+```
+
+Run the RAL frontdoor smoke with:
+
+```sh
+make uvm-run UVM_TEST=mini_tpu_ral_smoke_test
+```
 
 Regression runs use per-target logs instead of overwriting one file. Examples:
 

@@ -3,6 +3,7 @@
 +incdir+../verif/seq
 +incdir+../verif/agent
 +incdir+../verif/env
++incdir+../verif/ral
 +incdir+../verif/tests
 ../rtl/tpu_mac_cell.sv
 ../rtl/systolic_array.sv

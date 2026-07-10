@@ -69,6 +69,7 @@ regression:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_invalid_addr_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_busy_write_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_8x8_stress_test'
+	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_ral_smoke_test'
 
 regression-cov:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-run'

@@ -100,3 +100,15 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - `run_tb_mini_tpu_uvm_8x8_mini_tpu_smoke_test.log`
 - Rename the parameterized systolic array RTL from the 4x4-specific name to `systolic_array`.
 - Add `mini_tpu_8x8_stress_test` to exercise dense signed, sparse diagonal, and checkerboard matrices across the configured array size.
+
+## Milestone 10: UVM RAL
+
+- Add a reusable RAL model for the memory-mapped TPU subsystem.
+- Model `CTRL` as write-only control fields and `STATUS` as volatile read-only status fields.
+- Model A/B scratchpad banks as RW memories and C result bank as RO memory.
+- Add a dedicated RAL AXI-Lite frontdoor path:
+  - `mini_tpu_ral_bus_item`
+  - `mini_tpu_ral_adapter`
+  - `mini_tpu_ral_sequencer`
+  - `mini_tpu_ral_driver`
+- Add `mini_tpu_ral_smoke_test` to program A/B memories, start the TPU, poll STATUS, and read C through RAL frontdoor access.

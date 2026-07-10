@@ -13,6 +13,11 @@ package mini_tpu_pkg;
     `include "mini_tpu_axi_driver.sv"
     `include "mini_tpu_axi_monitor.sv"
     `include "mini_tpu_axi_agent.sv"
+    `include "mini_tpu_ral_bus_item.sv"
+    `include "mini_tpu_ral_sequencer.sv"
+    `include "mini_tpu_ral_driver.sv"
+    `include "mini_tpu_ral_adapter.sv"
+    `include "mini_tpu_ral_model.sv"
     `include "mini_tpu_scoreboard.sv"
     `include "mini_tpu_cov.sv"
     `include "mini_tpu_env.sv"
@@ -22,6 +27,7 @@ package mini_tpu_pkg;
     `include "mini_tpu_invalid_addr_test.sv"
     `include "mini_tpu_busy_write_test.sv"
     `include "mini_tpu_8x8_stress_test.sv"
+    `include "mini_tpu_ral_smoke_test.sv"
 
 endpackage
 
