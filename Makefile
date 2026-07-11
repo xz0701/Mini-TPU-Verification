@@ -6,15 +6,34 @@ ARRAY_SIZE ?= 4
 UVM_OPTS ?=
 COV_OPTS ?=
 COV_RUN_OPTS ?=
+COV_METRICS ?= line+cond+tgl+fsm+branch
+COV_REPORT_METRICS ?= line+cond+tgl+fsm+branch+group
+COV_DB_ROOT ?= cov_work
+COV_MERGED_DB ?= cov_merged.vdb
+COV_REPORT_DIR ?= cov_report
+ENABLE_COV ?= 0
 DEFINE_OPTS ?= +define+MINI_TPU_ARRAY_SIZE=$(ARRAY_SIZE)
 RUN_TAG ?= $(TOP)_$(ARRAY_SIZE)x$(ARRAY_SIZE)$(if $(TEST),_$(TEST),)
 COMPILE_LOG ?= compile_$(RUN_TAG).log
 RUN_LOG ?= run_$(RUN_TAG).log
 
+ifeq ($(ENABLE_COV),1)
+VCS_COV_OPTS = -cm $(COV_METRICS)
+SIM_COV_OPTS = -cm $(COV_METRICS) -cm_name $(RUN_TAG) -cm_dir $(COV_DB_ROOT)/$(RUN_TAG).vdb
+endif
+
+REGRESSION_UVM_TESTS ?= mini_tpu_smoke_test \
+                        mini_tpu_mem_test \
+                        mini_tpu_invalid_addr_test \
+                        mini_tpu_busy_write_test \
+                        mini_tpu_8x8_stress_test \
+                        mini_tpu_ral_smoke_test
+
 VCS_OPTS = -full64 \
            -sverilog \
            $(DEFINE_OPTS) \
            $(UVM_OPTS) \
+           $(VCS_COV_OPTS) \
            $(COV_OPTS) \
            -timescale=1ns/1ps \
            -debug_access+all \
@@ -24,7 +43,7 @@ VCS_OPTS = -full64 \
 TEST    ?=
 UVM_TEST ?= mini_tpu_smoke_test
 
-SIM_OPTS = $(if $(TEST),+UVM_TESTNAME=$(TEST),) $(COV_RUN_OPTS) -l $(RUN_LOG)
+SIM_OPTS = $(if $(TEST),+UVM_TESTNAME=$(TEST),) $(SIM_COV_OPTS) $(COV_RUN_OPTS) -l $(RUN_LOG)
 
 all: run
 
@@ -53,13 +72,17 @@ uvm-setup-run:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run'
 
 uvm-cov-run:
-	$(MAKE) run TOP=tb_mini_tpu_uvm FLIST=../script/filelist_uvm.f TEST=$(UVM_TEST) UVM_OPTS="-ntb_opts uvm" COV_OPTS="-cm line+cond+tgl+fsm+branch" COV_RUN_OPTS="-cm line+cond+tgl+fsm+branch"
+	mkdir -p $(SIM_DIR)/$(COV_DB_ROOT)
+	$(MAKE) run TOP=tb_mini_tpu_uvm FLIST=../script/filelist_uvm.f TEST=$(UVM_TEST) UVM_OPTS="-ntb_opts uvm" ENABLE_COV=1
 
 uvm-cov-report:
-	cd $(SIM_DIR) && urg -dir simv.vdb -metric line+cond+tgl+fsm+branch+group -report cov_report
+	cd $(SIM_DIR) && urg -dir $(COV_DB_ROOT)/*.vdb -metric $(COV_REPORT_METRICS) -dbname $(COV_MERGED_DB) -report $(COV_REPORT_DIR)
 
 uvm-cov-setup-run:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-run'
+
+regression-summary:
+	bash script/gen_regression_summary.sh $(SIM_DIR) $(SIM_DIR)/regression_summary.txt
 
 regression:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) run'
@@ -72,11 +95,32 @@ regression:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_ral_smoke_test'
 
 regression-cov:
-	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-run'
+	$(MAKE) clean-cov
+	set -e; \
+	for test in $(REGRESSION_UVM_TESTS); do \
+	    bash -lc "source ../../env/setup.sh && $(MAKE) uvm-cov-run ARRAY_SIZE=$(ARRAY_SIZE) UVM_TEST=$$test"; \
+	done
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-report'
+	$(MAKE) regression-summary
+
+regression-cov-all: clean-cov
+	set -e; \
+	for array_size in 4 8; do \
+	    for test in $(REGRESSION_UVM_TESTS); do \
+	        bash -lc "source ../../env/setup.sh && $(MAKE) uvm-cov-run ARRAY_SIZE=$$array_size UVM_TEST=$$test"; \
+	    done; \
+	done
+	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-report'
+	$(MAKE) regression-summary
 
 regression-8x8:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) regression ARRAY_SIZE=8'
+
+clean-cov:
+	rm -rf $(SIM_DIR)/$(COV_DB_ROOT) \
+	       $(SIM_DIR)/$(COV_MERGED_DB) \
+	       $(SIM_DIR)/$(COV_REPORT_DIR) \
+	       $(SIM_DIR)/regression_summary.txt
 
 clean:
 	rm -rf $(SIM_DIR)/simv \
@@ -86,9 +130,12 @@ clean:
 	       $(SIM_DIR)/*.vpd \
 	       $(SIM_DIR)/*.fsdb \
 	       $(SIM_DIR)/*.vdb \
-	       $(SIM_DIR)/cov_report \
+	       $(SIM_DIR)/$(COV_DB_ROOT) \
+	       $(SIM_DIR)/$(COV_MERGED_DB) \
+	       $(SIM_DIR)/$(COV_REPORT_DIR) \
+	       $(SIM_DIR)/regression_summary.txt \
 	       $(SIM_DIR)/ucli.key \
 	       $(SIM_DIR)/DVEfiles \
 	       $(SIM_DIR)/inter.vpd
 
-.PHONY: all compile run setup-run axi-run axi-setup-run uvm-run uvm-setup-run uvm-cov-run uvm-cov-report uvm-cov-setup-run regression regression-cov regression-8x8 clean
+.PHONY: all compile run setup-run axi-run axi-setup-run uvm-run uvm-setup-run uvm-cov-run uvm-cov-report uvm-cov-setup-run regression regression-summary regression-cov regression-cov-all regression-8x8 clean-cov clean

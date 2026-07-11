@@ -128,11 +128,30 @@ sim/run_tb_mini_tpu_uvm_8x8_mini_tpu_smoke_test.log
 sim/run_tb_mini_tpu_uvm_8x8_mini_tpu_8x8_stress_test.log
 ```
 
-For VCS code coverage:
+For a single UVM coverage run:
 
 ```sh
 make uvm-cov-setup-run
 make uvm-cov-report
 ```
 
-The generated HTML/text coverage report is written under `sim/cov_report/`.
+For a coverage regression with one VDB per UVM test and a merged URG report:
+
+```sh
+make regression-cov ARRAY_SIZE=8
+```
+
+For both 4x4 and 8x8 coverage regression:
+
+```sh
+make regression-cov-all
+```
+
+The generated artifacts are:
+
+```text
+sim/cov_work/                 per-test VDBs
+sim/cov_merged.vdb            merged coverage database
+sim/cov_report/               merged HTML/text URG report
+sim/regression_summary.txt    pass/fail and coverage summary
+```

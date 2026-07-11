@@ -112,3 +112,13 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - `mini_tpu_ral_sequencer`
   - `mini_tpu_ral_driver`
 - Add `mini_tpu_ral_smoke_test` to program A/B memories, start the TPU, poll STATUS, and read C through RAL frontdoor access.
+
+## Milestone 11: Regression Coverage Merge
+
+- Keep normal `make regression` as the fast functional gate.
+- Upgrade `make regression-cov` into a multi-test UVM coverage regression:
+  - each UVM test writes an independent VDB under `sim/cov_work/`;
+  - URG merges the per-test VDBs into `sim/cov_merged.vdb`;
+  - the merged report is written under `sim/cov_report/`;
+  - `script/gen_regression_summary.sh` emits `sim/regression_summary.txt`.
+- Add `make regression-cov-all` as the 4x4 plus 8x8 coverage signoff target.
