@@ -8,6 +8,7 @@ class mini_tpu_base_test extends uvm_test;
     localparam int ARRAY_SIZE = `MINI_TPU_ARRAY_SIZE;
     localparam bit [11:0] ADDR_CTRL   = 12'h000;
     localparam bit [11:0] ADDR_STATUS = 12'h004;
+    localparam bit [11:0] ADDR_CFG    = 12'h008;
     localparam bit [11:0] ADDR_A_BASE = 12'h100;
     localparam bit [11:0] ADDR_B_BASE = 12'h200;
     localparam bit [11:0] ADDR_C_BASE = 12'h300;

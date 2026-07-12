@@ -9,37 +9,48 @@ module mini_tpu_scratchpad #(
 
     input  logic                         a_we_i,
     input  logic                         b_we_i,
+    input  logic                         load_bank_sel_i,
+    input  logic                         compute_bank_sel_i,
     input  logic [IDX_WIDTH-1:0]         wr_idx_i,
     input  logic signed [MAT_WIDTH-1:0]  wr_data_i,
 
     input  logic                         c_commit_i,
     input  logic signed [ACC_WIDTH-1:0]  c_commit_matrix_i [ARRAY_SIZE][ARRAY_SIZE],
 
+    output logic signed [MAT_WIDTH-1:0]  a_load_matrix_o [ARRAY_SIZE][ARRAY_SIZE],
+    output logic signed [MAT_WIDTH-1:0]  b_load_matrix_o [ARRAY_SIZE][ARRAY_SIZE],
     output logic signed [MAT_WIDTH-1:0]  a_matrix_o [ARRAY_SIZE][ARRAY_SIZE],
     output logic signed [MAT_WIDTH-1:0]  b_matrix_o [ARRAY_SIZE][ARRAY_SIZE],
     output logic signed [ACC_WIDTH-1:0]  c_matrix_o [ARRAY_SIZE][ARRAY_SIZE]
 );
 
-    logic signed [MAT_WIDTH-1:0] a_bank_q [ARRAY_SIZE][ARRAY_SIZE];
-    logic signed [MAT_WIDTH-1:0] b_bank_q [ARRAY_SIZE][ARRAY_SIZE];
+    logic signed [MAT_WIDTH-1:0] a_bank_q [2][ARRAY_SIZE][ARRAY_SIZE];
+    logic signed [MAT_WIDTH-1:0] b_bank_q [2][ARRAY_SIZE][ARRAY_SIZE];
     logic signed [ACC_WIDTH-1:0] c_bank_q [ARRAY_SIZE][ARRAY_SIZE];
 
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (!rst_ni) begin
+            for (int bank = 0; bank < 2; bank++) begin
+                for (int row = 0; row < ARRAY_SIZE; row++) begin
+                    for (int col = 0; col < ARRAY_SIZE; col++) begin
+                        a_bank_q[bank][row][col] <= '0;
+                        b_bank_q[bank][row][col] <= '0;
+                    end
+                end
+            end
+
             for (int row = 0; row < ARRAY_SIZE; row++) begin
                 for (int col = 0; col < ARRAY_SIZE; col++) begin
-                    a_bank_q[row][col] <= '0;
-                    b_bank_q[row][col] <= '0;
                     c_bank_q[row][col] <= '0;
                 end
             end
         end else begin
             if (a_we_i) begin
-                a_bank_q[wr_idx_i / ARRAY_SIZE][wr_idx_i % ARRAY_SIZE] <= wr_data_i;
+                a_bank_q[load_bank_sel_i][wr_idx_i / ARRAY_SIZE][wr_idx_i % ARRAY_SIZE] <= wr_data_i;
             end
 
             if (b_we_i) begin
-                b_bank_q[wr_idx_i / ARRAY_SIZE][wr_idx_i % ARRAY_SIZE] <= wr_data_i;
+                b_bank_q[load_bank_sel_i][wr_idx_i / ARRAY_SIZE][wr_idx_i % ARRAY_SIZE] <= wr_data_i;
             end
 
             if (c_commit_i) begin
@@ -55,8 +66,10 @@ module mini_tpu_scratchpad #(
     always_comb begin
         for (int row = 0; row < ARRAY_SIZE; row++) begin
             for (int col = 0; col < ARRAY_SIZE; col++) begin
-                a_matrix_o[row][col] = a_bank_q[row][col];
-                b_matrix_o[row][col] = b_bank_q[row][col];
+                a_load_matrix_o[row][col] = a_bank_q[load_bank_sel_i][row][col];
+                b_load_matrix_o[row][col] = b_bank_q[load_bank_sel_i][row][col];
+                a_matrix_o[row][col] = a_bank_q[compute_bank_sel_i][row][col];
+                b_matrix_o[row][col] = b_bank_q[compute_bank_sel_i][row][col];
                 c_matrix_o[row][col] = c_bank_q[row][col];
             end
         end

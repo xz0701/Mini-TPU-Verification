@@ -35,6 +35,7 @@ module mini_tpu_axi_lite #(
 
     localparam logic [ADDR_WIDTH-1:0] ADDR_CTRL   = 12'h000;
     localparam logic [ADDR_WIDTH-1:0] ADDR_STATUS = 12'h004;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_CFG    = 12'h008;
     localparam logic [ADDR_WIDTH-1:0] ADDR_A_BASE = 12'h100;
     localparam logic [ADDR_WIDTH-1:0] ADDR_B_BASE = 12'h200;
     localparam logic [ADDR_WIDTH-1:0] ADDR_C_BASE = 12'h300;
@@ -52,6 +53,8 @@ module mini_tpu_axi_lite #(
 
     logic signed [MAT_WIDTH-1:0] a_matrix [ARRAY_SIZE][ARRAY_SIZE];
     logic signed [MAT_WIDTH-1:0] b_matrix [ARRAY_SIZE][ARRAY_SIZE];
+    logic signed [MAT_WIDTH-1:0] a_load_matrix [ARRAY_SIZE][ARRAY_SIZE];
+    logic signed [MAT_WIDTH-1:0] b_load_matrix [ARRAY_SIZE][ARRAY_SIZE];
     logic signed [ACC_WIDTH-1:0] c_matrix [ARRAY_SIZE][ARRAY_SIZE];
     logic signed [ACC_WIDTH-1:0] core_c_matrix [ARRAY_SIZE][ARRAY_SIZE];
 
@@ -60,15 +63,22 @@ module mini_tpu_axi_lite #(
     logic core_done;
     logic done_sticky_q;
     logic matrix_write_fire;
+    logic matrix_write_allowed;
     logic a_bank_we;
     logic b_bank_we;
+    logic load_bank_q;
+    logic compute_bank_q;
+    logic core_bank_q;
+    logic selected_compute_bank;
     logic [MATRIX_IDX_W-1:0] matrix_wr_idx;
 
     assign s_axi_awready = rst_ni && !aw_pending_q && !s_axi_bvalid;
     assign s_axi_wready  = rst_ni && !w_pending_q  && !s_axi_bvalid;
     assign s_axi_arready = rst_ni && !s_axi_rvalid;
 
-    assign matrix_write_fire = aw_pending_q && w_pending_q && !s_axi_bvalid && w_strb_q[0] && !core_busy;
+    assign selected_compute_bank = core_busy ? core_bank_q : compute_bank_q;
+    assign matrix_write_allowed = !core_busy || (load_bank_q != core_bank_q);
+    assign matrix_write_fire = aw_pending_q && w_pending_q && !s_axi_bvalid && w_strb_q[0] && matrix_write_allowed;
     assign a_bank_we = matrix_write_fire && is_matrix_addr(aw_addr_q, ADDR_A_BASE);
     assign b_bank_we = matrix_write_fire && is_matrix_addr(aw_addr_q, ADDR_B_BASE);
     assign matrix_wr_idx = is_matrix_addr(aw_addr_q, ADDR_B_BASE) ?
@@ -84,10 +94,14 @@ module mini_tpu_axi_lite #(
         .rst_ni            (rst_ni),
         .a_we_i            (a_bank_we),
         .b_we_i            (b_bank_we),
+        .load_bank_sel_i   (load_bank_q),
+        .compute_bank_sel_i(selected_compute_bank),
         .wr_idx_i          (matrix_wr_idx),
         .wr_data_i         (w_data_q[MAT_WIDTH-1:0]),
         .c_commit_i        (core_done),
         .c_commit_matrix_i (core_c_matrix),
+        .a_load_matrix_o   (a_load_matrix),
+        .b_load_matrix_o   (b_load_matrix),
         .a_matrix_o        (a_matrix),
         .b_matrix_o        (b_matrix),
         .c_matrix_o        (c_matrix)
@@ -119,6 +133,9 @@ module mini_tpu_axi_lite #(
             s_axi_bvalid <= 1'b0;
             core_start   <= 1'b0;
             done_sticky_q <= 1'b0;
+            load_bank_q  <= 1'b0;
+            compute_bank_q <= 1'b0;
+            core_bank_q  <= 1'b0;
 
         end else begin
             core_start <= 1'b0;
@@ -148,11 +165,17 @@ module mini_tpu_axi_lite #(
                 if (aw_addr_q == ADDR_CTRL) begin
                     if (w_strb_q[0] && w_data_q[0] && !core_busy) begin
                         core_start <= 1'b1;
+                        core_bank_q <= compute_bank_q;
                         done_sticky_q <= 1'b0;
                     end
 
                     if (w_strb_q[0] && w_data_q[1]) begin
                         done_sticky_q <= 1'b0;
+                    end
+                end else if (aw_addr_q == ADDR_CFG) begin
+                    if (w_strb_q[0]) begin
+                        load_bank_q <= w_data_q[0];
+                        compute_bank_q <= w_data_q[1];
                     end
                 end else if (is_matrix_addr(aw_addr_q, ADDR_A_BASE)) begin
                     s_axi_bresp <= RESP_OKAY;
@@ -199,16 +222,20 @@ module mini_tpu_axi_lite #(
         end else if (addr == ADDR_STATUS) begin
             read_data[0] = core_busy;
             read_data[1] = done_sticky_q;
+        end else if (addr == ADDR_CFG) begin
+            read_data[0] = load_bank_q;
+            read_data[1] = compute_bank_q;
+            read_data[2] = core_bank_q;
         end else if (is_matrix_addr(addr, ADDR_A_BASE)) begin
             idx = matrix_index(addr, ADDR_A_BASE);
             row = idx / ARRAY_SIZE;
             col = idx % ARRAY_SIZE;
-            read_data[MAT_WIDTH-1:0] = a_matrix[row][col];
+            read_data[MAT_WIDTH-1:0] = a_load_matrix[row][col];
         end else if (is_matrix_addr(addr, ADDR_B_BASE)) begin
             idx = matrix_index(addr, ADDR_B_BASE);
             row = idx / ARRAY_SIZE;
             col = idx % ARRAY_SIZE;
-            read_data[MAT_WIDTH-1:0] = b_matrix[row][col];
+            read_data[MAT_WIDTH-1:0] = b_load_matrix[row][col];
         end else if (is_matrix_addr(addr, ADDR_C_BASE)) begin
             idx = matrix_index(addr, ADDR_C_BASE);
             row = idx / ARRAY_SIZE;
@@ -220,6 +247,7 @@ module mini_tpu_axi_lite #(
     function automatic logic [1:0] read_resp(input logic [ADDR_WIDTH-1:0] addr);
         if ((addr == ADDR_CTRL) ||
             (addr == ADDR_STATUS) ||
+            (addr == ADDR_CFG) ||
             is_matrix_addr(addr, ADDR_A_BASE) ||
             is_matrix_addr(addr, ADDR_B_BASE) ||
             is_matrix_addr(addr, ADDR_C_BASE)) begin

@@ -34,11 +34,14 @@ module mini_tpu_axi_lite_sva #(
     input logic                         core_done,
     input logic                         done_sticky_q,
     input logic                         a_bank_we,
-    input logic                         b_bank_we
+    input logic                         b_bank_we,
+    input logic                         load_bank_q,
+    input logic                         core_bank_q
 );
 
     localparam logic [ADDR_WIDTH-1:0] ADDR_CTRL   = 12'h000;
     localparam logic [ADDR_WIDTH-1:0] ADDR_STATUS = 12'h004;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_CFG    = 12'h008;
     localparam logic [ADDR_WIDTH-1:0] ADDR_A_BASE = 12'h100;
     localparam logic [ADDR_WIDTH-1:0] ADDR_B_BASE = 12'h200;
     localparam logic [ADDR_WIDTH-1:0] ADDR_C_BASE = 12'h300;
@@ -64,6 +67,7 @@ module mini_tpu_axi_lite_sva #(
 
     function automatic bit is_valid_write_addr(input logic [ADDR_WIDTH-1:0] addr);
         is_valid_write_addr = (addr == ADDR_CTRL) ||
+                              (addr == ADDR_CFG) ||
                               is_matrix_addr(addr, ADDR_A_BASE) ||
                               is_matrix_addr(addr, ADDR_B_BASE);
     endfunction
@@ -71,6 +75,7 @@ module mini_tpu_axi_lite_sva #(
     function automatic bit is_valid_read_addr(input logic [ADDR_WIDTH-1:0] addr);
         is_valid_read_addr = (addr == ADDR_CTRL) ||
                              (addr == ADDR_STATUS) ||
+                             (addr == ADDR_CFG) ||
                              is_matrix_addr(addr, ADDR_A_BASE) ||
                              is_matrix_addr(addr, ADDR_B_BASE) ||
                              is_matrix_addr(addr, ADDR_C_BASE);
@@ -162,9 +167,14 @@ module mini_tpu_axi_lite_sva #(
         (done_sticky_q && !done_clear_fire) |=> done_sticky_q
     );
 
-    a_no_input_bank_write_while_busy: assert property (
+    a_no_active_input_bank_write_while_busy: assert property (
         disable iff (!rst_ni)
-        core_busy |-> (!a_bank_we && !b_bank_we)
+        (core_busy && (load_bank_q == core_bank_q)) |-> (!a_bank_we && !b_bank_we)
+    );
+
+    a_busy_input_write_targets_inactive_bank: assert property (
+        disable iff (!rst_ni)
+        (core_busy && (a_bank_we || b_bank_we)) |-> (load_bank_q != core_bank_q)
     );
 
 endmodule
@@ -203,5 +213,7 @@ bind mini_tpu_axi_lite mini_tpu_axi_lite_sva #(
     .core_done     (core_done),
     .done_sticky_q (done_sticky_q),
     .a_bank_we     (a_bank_we),
-    .b_bank_we     (b_bank_we)
+    .b_bank_we     (b_bank_we),
+    .load_bank_q   (load_bank_q),
+    .core_bank_q   (core_bank_q)
 );

@@ -22,6 +22,30 @@ class mini_tpu_ctrl_reg extends uvm_reg;
 
 endclass
 
+class mini_tpu_cfg_reg extends uvm_reg;
+
+    `uvm_object_utils(mini_tpu_cfg_reg)
+
+    uvm_reg_field load_bank;
+    uvm_reg_field compute_bank;
+    uvm_reg_field active_bank;
+
+    function new(string name = "mini_tpu_cfg_reg");
+        super.new(name, 32, UVM_NO_COVERAGE);
+    endfunction
+
+    virtual function void build();
+        load_bank = uvm_reg_field::type_id::create("load_bank");
+        compute_bank = uvm_reg_field::type_id::create("compute_bank");
+        active_bank = uvm_reg_field::type_id::create("active_bank");
+
+        load_bank.configure(this, 1, 0, "RW", 0, 1'b0, 1, 0, 0);
+        compute_bank.configure(this, 1, 1, "RW", 0, 1'b0, 1, 0, 0);
+        active_bank.configure(this, 1, 2, "RO", 1, 1'b0, 1, 0, 0);
+    endfunction
+
+endclass
+
 class mini_tpu_status_reg extends uvm_reg;
 
     `uvm_object_utils(mini_tpu_status_reg)
@@ -51,6 +75,7 @@ class mini_tpu_ral_model extends uvm_reg_block;
     localparam int NUM_ELEMS = ARRAY_SIZE * ARRAY_SIZE;
 
     rand mini_tpu_ctrl_reg   ctrl;
+    rand mini_tpu_cfg_reg    cfg;
     rand mini_tpu_status_reg status;
     uvm_mem                  a_mem;
     uvm_mem                  b_mem;
@@ -72,6 +97,11 @@ class mini_tpu_ral_model extends uvm_reg_block;
         status.configure(this, null, "");
         status.build();
         default_map.add_reg(status, 12'h004, "RO");
+
+        cfg = mini_tpu_cfg_reg::type_id::create("cfg");
+        cfg.configure(this, null, "");
+        cfg.build();
+        default_map.add_reg(cfg, 12'h008, "RW");
 
         a_mem = new("a_mem", NUM_ELEMS, 32, "RW", UVM_NO_COVERAGE);
         a_mem.configure(this, "");

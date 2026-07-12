@@ -122,3 +122,13 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - the merged report is written under `sim/cov_report/`;
   - `script/gen_regression_summary.sh` emits `sim/regression_summary.txt`.
 - Add `make regression-cov-all` as the 4x4 plus 8x8 coverage signoff target.
+
+## Milestone 12: Double-Buffered Input Scratchpad
+
+- Add a `CFG` CSR at `0x008`:
+  - bit0 selects the AXI load/readback bank for A/B scratchpad accesses;
+  - bit1 selects the compute bank for the next matrix operation;
+  - bit2 reports the bank latched by the active or most recent compute.
+- Double-buffer A and B input banks while keeping a single software-visible A/B/C address map.
+- Permit busy-time writes only when the selected load bank is different from the active compute bank.
+- Add `mini_tpu_double_buffer_test` to compute from one bank while preloading the other bank, then compute the preloaded tile.

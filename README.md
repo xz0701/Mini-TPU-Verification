@@ -73,10 +73,13 @@ make regression-8x8
 ```text
 0x000 CTRL    bit0=start, bit1=clear done sticky
 0x004 STATUS  bit0=busy, bit1=done sticky
+0x008 CFG     bit0=load bank, bit1=compute bank, bit2=active compute bank
 0x100 A bank, one signed int8 per 32-bit word
 0x200 B bank, one signed int8 per 32-bit word
 0x300 C bank, one signed int32 per 32-bit word
 ```
+
+The A/B scratchpad is double-buffered. `CFG.load_bank` selects which input bank AXI reads and writes use, while `CFG.compute_bank` selects the input bank used by the next TPU operation. During an active compute, writes to the inactive bank are accepted so software or a future DMA path can preload the next tile.
 
 For 8x8, each bank uses 64 words, so the existing 12-bit map covers:
 
@@ -109,6 +112,7 @@ The UVM environment also includes a RAL model:
 ```text
 CTRL       0x000, write-only start / clear-done fields
 STATUS     0x004, read-only busy / done fields
+CFG        0x008, load-bank / compute-bank selection
 A memory   0x100, RW scratchpad bank
 B memory   0x200, RW scratchpad bank
 C memory   0x300, RO result bank
