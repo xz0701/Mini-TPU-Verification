@@ -14,6 +14,12 @@ module mini_tpu_scratchpad #(
     input  logic [IDX_WIDTH-1:0]         wr_idx_i,
     input  logic signed [MAT_WIDTH-1:0]  wr_data_i,
 
+    input  logic                         dma_a_we_i,
+    input  logic                         dma_b_we_i,
+    input  logic                         dma_bank_sel_i,
+    input  logic [IDX_WIDTH-1:0]         dma_wr_idx_i,
+    input  logic signed [MAT_WIDTH-1:0]  dma_wr_data_i,
+
     input  logic                         c_commit_i,
     input  logic signed [ACC_WIDTH-1:0]  c_commit_matrix_i [ARRAY_SIZE][ARRAY_SIZE],
 
@@ -51,6 +57,14 @@ module mini_tpu_scratchpad #(
 
             if (b_we_i) begin
                 b_bank_q[load_bank_sel_i][wr_idx_i / ARRAY_SIZE][wr_idx_i % ARRAY_SIZE] <= wr_data_i;
+            end
+
+            if (dma_a_we_i) begin
+                a_bank_q[dma_bank_sel_i][dma_wr_idx_i / ARRAY_SIZE][dma_wr_idx_i % ARRAY_SIZE] <= dma_wr_data_i;
+            end
+
+            if (dma_b_we_i) begin
+                b_bank_q[dma_bank_sel_i][dma_wr_idx_i / ARRAY_SIZE][dma_wr_idx_i % ARRAY_SIZE] <= dma_wr_data_i;
             end
 
             if (c_commit_i) begin

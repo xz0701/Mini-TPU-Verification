@@ -42,9 +42,14 @@ module mini_tpu_axi_lite_sva #(
     localparam logic [ADDR_WIDTH-1:0] ADDR_CTRL   = 12'h000;
     localparam logic [ADDR_WIDTH-1:0] ADDR_STATUS = 12'h004;
     localparam logic [ADDR_WIDTH-1:0] ADDR_CFG    = 12'h008;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_CTRL   = 12'h020;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_STATUS = 12'h024;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_CFG    = 12'h028;
     localparam logic [ADDR_WIDTH-1:0] ADDR_A_BASE = 12'h100;
     localparam logic [ADDR_WIDTH-1:0] ADDR_B_BASE = 12'h200;
     localparam logic [ADDR_WIDTH-1:0] ADDR_C_BASE = 12'h300;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_A_SRC_BASE = 12'h400;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_B_SRC_BASE = 12'h500;
     localparam logic [1:0] RESP_OKAY  = 2'b00;
     localparam logic [1:0] RESP_SLVERR = 2'b10;
     localparam int DONE_BOUND_CYCLES = (3 * ARRAY_SIZE) + 4;
@@ -68,17 +73,26 @@ module mini_tpu_axi_lite_sva #(
     function automatic bit is_valid_write_addr(input logic [ADDR_WIDTH-1:0] addr);
         is_valid_write_addr = (addr == ADDR_CTRL) ||
                               (addr == ADDR_CFG) ||
+                              (addr == ADDR_DMA_CTRL) ||
+                              (addr == ADDR_DMA_CFG) ||
                               is_matrix_addr(addr, ADDR_A_BASE) ||
-                              is_matrix_addr(addr, ADDR_B_BASE);
+                              is_matrix_addr(addr, ADDR_B_BASE) ||
+                              is_matrix_addr(addr, ADDR_DMA_A_SRC_BASE) ||
+                              is_matrix_addr(addr, ADDR_DMA_B_SRC_BASE);
     endfunction
 
     function automatic bit is_valid_read_addr(input logic [ADDR_WIDTH-1:0] addr);
         is_valid_read_addr = (addr == ADDR_CTRL) ||
                              (addr == ADDR_STATUS) ||
                              (addr == ADDR_CFG) ||
+                             (addr == ADDR_DMA_CTRL) ||
+                             (addr == ADDR_DMA_STATUS) ||
+                             (addr == ADDR_DMA_CFG) ||
                              is_matrix_addr(addr, ADDR_A_BASE) ||
                              is_matrix_addr(addr, ADDR_B_BASE) ||
-                             is_matrix_addr(addr, ADDR_C_BASE);
+                             is_matrix_addr(addr, ADDR_C_BASE) ||
+                             is_matrix_addr(addr, ADDR_DMA_A_SRC_BASE) ||
+                             is_matrix_addr(addr, ADDR_DMA_B_SRC_BASE);
     endfunction
 
     a_reset_outputs: assert property (

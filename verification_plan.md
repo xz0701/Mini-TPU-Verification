@@ -132,3 +132,16 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
 - Double-buffer A and B input banks while keeping a single software-visible A/B/C address map.
 - Permit busy-time writes only when the selected load bank is different from the active compute bank.
 - Add `mini_tpu_double_buffer_test` to compute from one bank while preloading the other bank, then compute the preloaded tile.
+
+## Milestone 13: Descriptor-Controlled DMA Preload
+
+- Add `mini_tpu_dma.sv` as the first data-movement engine.
+- Add DMA CSRs:
+  - `0x020 DMA_CTRL`: start and clear sticky status.
+  - `0x024 DMA_STATUS`: busy, done sticky, and error sticky.
+  - `0x028 DMA_CFG`: target bank and A/B copy enables.
+- Add source staging windows:
+  - `0x400`: DMA A source tile.
+  - `0x500`: DMA B source tile.
+- The DMA engine copies staged source tiles into the selected inactive scratchpad bank one element per cycle.
+- Add `mini_tpu_dma_test` to verify DMA preload, compute from the DMA-filled bank, and ping-pong preload while the other bank is computing.

@@ -2,6 +2,7 @@
 ../rtl/tpu_mac_cell.sv
 ../rtl/systolic_array.sv
 ../rtl/mini_tpu_core.sv
+../rtl/mini_tpu_dma.sv
 ../rtl/mini_tpu_scratchpad.sv
 ../rtl/mini_tpu_axi_lite.sv
 ../sva/mini_tpu_axi_lite_sva.sv

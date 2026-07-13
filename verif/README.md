@@ -19,6 +19,7 @@ Current focused tests:
 - `mini_tpu_invalid_addr_test`
 - `mini_tpu_busy_write_test`
 - `mini_tpu_double_buffer_test`
+- `mini_tpu_dma_test`
 - `mini_tpu_8x8_stress_test`
 - `mini_tpu_ral_smoke_test`
 

@@ -9,9 +9,14 @@ class mini_tpu_base_test extends uvm_test;
     localparam bit [11:0] ADDR_CTRL   = 12'h000;
     localparam bit [11:0] ADDR_STATUS = 12'h004;
     localparam bit [11:0] ADDR_CFG    = 12'h008;
+    localparam bit [11:0] ADDR_DMA_CTRL   = 12'h020;
+    localparam bit [11:0] ADDR_DMA_STATUS = 12'h024;
+    localparam bit [11:0] ADDR_DMA_CFG    = 12'h028;
     localparam bit [11:0] ADDR_A_BASE = 12'h100;
     localparam bit [11:0] ADDR_B_BASE = 12'h200;
     localparam bit [11:0] ADDR_C_BASE = 12'h300;
+    localparam bit [11:0] ADDR_DMA_A_SRC_BASE = 12'h400;
+    localparam bit [11:0] ADDR_DMA_B_SRC_BASE = 12'h500;
     localparam bit [1:0]  RESP_OKAY   = 2'b00;
     localparam bit [1:0]  RESP_SLVERR = 2'b10;
 
@@ -230,6 +235,21 @@ class mini_tpu_base_test extends uvm_test;
         end
     endtask
 
+    task automatic load_dma_source(mini_tpu_item item);
+        for (int row = 0; row < ARRAY_SIZE; row++) begin
+            for (int col = 0; col < ARRAY_SIZE; col++) begin
+                expect_write_resp(matrix_addr(ADDR_DMA_A_SRC_BASE, row, col),
+                                  {{24{item.a_matrix[row][col][7]}}, item.a_matrix[row][col]},
+                                  4'h1,
+                                  RESP_OKAY);
+                expect_write_resp(matrix_addr(ADDR_DMA_B_SRC_BASE, row, col),
+                                  {{24{item.b_matrix[row][col][7]}}, item.b_matrix[row][col]},
+                                  4'h1,
+                                  RESP_OKAY);
+            end
+        end
+    endtask
+
     task automatic start_core();
         expect_write_resp(ADDR_CTRL, 32'h0000_0001, 4'h1, RESP_OKAY);
     endtask
@@ -246,6 +266,34 @@ class mini_tpu_base_test extends uvm_test;
         end
 
         `uvm_error("MINI_TPU_BASE", "Timeout waiting for done sticky status")
+    endtask
+
+    task automatic poll_dma_done();
+        bit [31:0] status;
+
+        for (int timeout = 0; timeout < (ARRAY_SIZE * ARRAY_SIZE * 4); timeout++) begin
+            expect_read_resp(ADDR_DMA_STATUS, RESP_OKAY, status);
+            if (status[2]) begin
+                `uvm_error("MINI_TPU_BASE", $sformatf("DMA error sticky observed status=0x%0h", status))
+                return;
+            end
+            if (status[1]) begin
+                return;
+            end
+            repeat (1) @(posedge vif.clk);
+        end
+
+        `uvm_error("MINI_TPU_BASE", "Timeout waiting for DMA done sticky status")
+    endtask
+
+    task automatic clear_dma_status();
+        bit [31:0] status;
+
+        expect_write_resp(ADDR_DMA_CTRL, 32'h0000_0006, 4'h1, RESP_OKAY);
+        expect_read_resp(ADDR_DMA_STATUS, RESP_OKAY, status);
+        if (status[2:1] !== 2'b00) begin
+            `uvm_error("MINI_TPU_BASE", $sformatf("DMA sticky status did not clear status=0x%0h", status))
+        end
     endtask
 
     task automatic expect_busy_seen();
