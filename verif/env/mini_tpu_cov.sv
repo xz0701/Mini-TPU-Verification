@@ -75,10 +75,57 @@ class mini_tpu_cov extends uvm_subscriber #(mini_tpu_item);
         }
     endgroup
 
+    covergroup dma_cg with function sample(
+        int unsigned target_bank,
+        int unsigned copy_mode,
+        int unsigned error_reason,
+        bit          source_write_busy,
+        int unsigned clear_op
+    );
+        option.per_instance = 1;
+
+        cp_target_bank: coverpoint target_bank {
+            bins bank0 = {0};
+            bins bank1 = {1};
+        }
+
+        cp_copy_mode: coverpoint copy_mode {
+            bins none   = {0};
+            bins a_only = {1};
+            bins b_only = {2};
+            bins both   = {3};
+        }
+
+        cp_error_reason: coverpoint error_reason {
+            bins none        = {0};
+            bins no_copy     = {1};
+            bins dma_busy    = {2};
+            bins target_busy = {3};
+        }
+
+        cp_source_write_busy: coverpoint source_write_busy {
+            bins no  = {0};
+            bins yes = {1};
+        }
+
+        cp_clear_op: coverpoint clear_op {
+            bins none       = {0};
+            bins done_only  = {1};
+            bins error_only = {2};
+            bins both       = {3};
+        }
+    endgroup
+
+    int unsigned item_sample_count;
+    int unsigned dma_sample_count;
+
     function new(string name = "mini_tpu_cov", uvm_component parent);
         super.new(name, parent);
         matrix_cg = new();
         operation_cg = new();
+        dma_cg = new();
+        item_sample_count = 0;
+        dma_sample_count = 0;
     endfunction
 
     virtual function void write(mini_tpu_item t);
@@ -119,23 +166,45 @@ class mini_tpu_cov extends uvm_subscriber #(mini_tpu_item);
         end
 
         operation_cg.sample(has_negative, has_zero, has_positive);
+        item_sample_count++;
+    endfunction
+
+    virtual function void sample_dma(
+        int unsigned target_bank,
+        int unsigned copy_mode,
+        int unsigned error_reason,
+        bit          source_write_busy,
+        int unsigned clear_op
+    );
+        dma_cg.sample(target_bank, copy_mode, error_reason, source_write_busy, clear_op);
+        dma_sample_count++;
     endfunction
 
     virtual function void report_phase(uvm_phase phase);
         real matrix_cov;
         real operation_cov;
+        real dma_cov;
         real total_cov;
 
         super.report_phase(phase);
 
         matrix_cov = matrix_cg.get_inst_coverage();
         operation_cov = operation_cg.get_inst_coverage();
-        total_cov = (matrix_cov + operation_cov) / 2.0;
+        dma_cov = dma_cg.get_inst_coverage();
+
+        if ((item_sample_count == 0) && (dma_sample_count != 0)) begin
+            total_cov = dma_cov;
+        end else if (dma_sample_count == 0) begin
+            total_cov = (matrix_cov + operation_cov) / 2.0;
+        end else begin
+            total_cov = (matrix_cov + operation_cov + dma_cov) / 3.0;
+        end
 
         `uvm_info("MINI_TPU_COV",
-            $sformatf("Functional coverage: matrix_cg=%0.2f%% operation_cg=%0.2f%% total=%0.2f%%",
+            $sformatf("Functional coverage: matrix_cg=%0.2f%% operation_cg=%0.2f%% dma_cg=%0.2f%% total=%0.2f%%",
                       matrix_cov,
                       operation_cov,
+                      dma_cov,
                       total_cov),
             UVM_LOW)
     endfunction

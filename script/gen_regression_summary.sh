@@ -10,6 +10,16 @@ fail_count=0
 pass_count=0
 total_count=0
 
+is_known_uvm_test() {
+    local test="$1"
+
+    if [ -z "${REGRESSION_UVM_TESTS:-}" ]; then
+        return 0
+    fi
+
+    [[ " ${REGRESSION_UVM_TESTS} " == *" ${test} "* ]]
+}
+
 get_uvm_count() {
     local label="$1"
     local log="$2"
@@ -84,6 +94,11 @@ print_cov_report_summary() {
         info="$(get_test_info "${base}")"
         array="${info%%|*}"
         test="${info#*|}"
+
+        if [[ "${base}" =~ ^run_tb_mini_tpu_uvm_ ]] && ! is_known_uvm_test "${test}"; then
+            continue
+        fi
+
         errors="$(get_uvm_count "UVM_ERROR" "${log}")"
         fatals="$(get_uvm_count "UVM_FATAL" "${log}")"
         cov="$(get_cov_total "${log}")"

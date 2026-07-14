@@ -88,6 +88,8 @@ The A/B scratchpad is double-buffered. `CFG.load_bank` selects which input bank 
 
 The first DMA block is descriptor controlled through AXI-Lite. Software stages source A/B tiles in the `0x400` and `0x500` windows, programs `DMA_CFG`, then starts a copy into the selected inactive A/B scratchpad bank. This models the data-movement path before adding a full external AXI master.
 
+DMA negative tests cover no-copy starts, busy restarts, source-staging writes while busy, active-bank conflicts, and done/error sticky clear behavior.
+
 For 8x8, each bank uses 64 words, so the existing 12-bit map covers:
 
 ```text

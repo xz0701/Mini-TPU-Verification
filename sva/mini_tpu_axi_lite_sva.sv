@@ -36,7 +36,15 @@ module mini_tpu_axi_lite_sva #(
     input logic                         a_bank_we,
     input logic                         b_bank_we,
     input logic                         load_bank_q,
-    input logic                         core_bank_q
+    input logic                         core_bank_q,
+    input logic                         dma_busy,
+    input logic                         dma_done_sticky,
+    input logic                         dma_error_sticky,
+    input logic                         dma_target_bank,
+    input logic                         dma_copy_a,
+    input logic                         dma_copy_b,
+    input logic                         dma_src_a_we,
+    input logic                         dma_src_b_we
 );
 
     localparam logic [ADDR_WIDTH-1:0] ADDR_CTRL   = 12'h000;
@@ -57,6 +65,14 @@ module mini_tpu_axi_lite_sva #(
     wire write_fire = aw_pending_q && w_pending_q && !s_axi_bvalid;
     wire ctrl_write_fire = write_fire && (aw_addr_q == ADDR_CTRL) && w_strb_q[0];
     wire done_clear_fire = ctrl_write_fire && (w_data_q[1] || w_data_q[0]);
+    wire dma_ctrl_write_fire = write_fire && (aw_addr_q == ADDR_DMA_CTRL) && w_strb_q[0];
+    wire dma_start_fire = dma_ctrl_write_fire && w_data_q[0];
+    wire dma_done_clear_fire = dma_ctrl_write_fire && w_data_q[1];
+    wire dma_error_clear_fire = dma_ctrl_write_fire && w_data_q[2];
+    wire dma_start_allowed = !dma_busy &&
+                             (dma_copy_a || dma_copy_b) &&
+                             !(core_busy && (dma_target_bank == core_bank_q));
+    wire dma_invalid_start = dma_start_fire && !dma_start_allowed;
 
     default clocking cb @(posedge clk_i);
     endclocking
@@ -191,6 +207,26 @@ module mini_tpu_axi_lite_sva #(
         (core_busy && (a_bank_we || b_bank_we)) |-> (load_bank_q != core_bank_q)
     );
 
+    a_dma_source_write_blocked_while_busy: assert property (
+        disable iff (!rst_ni)
+        dma_busy |-> (!dma_src_a_we && !dma_src_b_we)
+    );
+
+    a_dma_invalid_start_sets_error: assert property (
+        disable iff (!rst_ni)
+        dma_invalid_start |=> dma_error_sticky
+    );
+
+    a_dma_done_sticky_holds_until_clear_or_restart: assert property (
+        disable iff (!rst_ni)
+        (dma_done_sticky && !dma_done_clear_fire && !dma_start_fire) |=> dma_done_sticky
+    );
+
+    a_dma_error_sticky_holds_until_clear_or_valid_restart: assert property (
+        disable iff (!rst_ni)
+        (dma_error_sticky && !dma_error_clear_fire && !(dma_start_fire && dma_start_allowed)) |=> dma_error_sticky
+    );
+
 endmodule
 
 bind mini_tpu_axi_lite mini_tpu_axi_lite_sva #(
@@ -229,5 +265,13 @@ bind mini_tpu_axi_lite mini_tpu_axi_lite_sva #(
     .a_bank_we     (a_bank_we),
     .b_bank_we     (b_bank_we),
     .load_bank_q   (load_bank_q),
-    .core_bank_q   (core_bank_q)
+    .core_bank_q   (core_bank_q),
+    .dma_busy      (dma_busy),
+    .dma_done_sticky (dma_done_sticky),
+    .dma_error_sticky(dma_error_sticky),
+    .dma_target_bank (dma_target_bank),
+    .dma_copy_a      (dma_copy_a),
+    .dma_copy_b      (dma_copy_b),
+    .dma_src_a_we    (dma_src_a_we),
+    .dma_src_b_we    (dma_src_b_we)
 );

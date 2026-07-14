@@ -145,3 +145,14 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - `0x500`: DMA B source tile.
 - The DMA engine copies staged source tiles into the selected inactive scratchpad bank one element per cycle.
 - Add `mini_tpu_dma_test` to verify DMA preload, compute from the DMA-filled bank, and ping-pong preload while the other bank is computing.
+
+## Milestone 14: DMA Negative, Sticky Status, and Coverage
+
+- Add `mini_tpu_dma_error_test` for DMA error recovery behavior:
+  - start with no A/B copy enable;
+  - restart while DMA is busy;
+  - write source staging while DMA is busy;
+  - start DMA into the core's active compute bank;
+  - clear done/error sticky status bits independently and together.
+- Extend functional coverage with DMA target-bank, copy-mode, error-reason, source-write-while-busy, and clear-operation coverpoints.
+- Extend AXI-Lite SVA bind checks for DMA invalid-start error reporting, sticky status hold behavior, and source-staging write blocking while DMA is busy.

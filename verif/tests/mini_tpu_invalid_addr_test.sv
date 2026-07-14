@@ -33,7 +33,8 @@ class mini_tpu_invalid_addr_test extends mini_tpu_base_test;
         expect_read_resp(12'h00c, RESP_SLVERR, data);
         expect_read_resp(12'h02c, RESP_SLVERR, data);
         expect_read_resp(12'h102, RESP_SLVERR, data);
-        expect_read_resp(ADDR_C_BASE + (ARRAY_SIZE * ARRAY_SIZE * 4), RESP_SLVERR, data);
+        // In 8x8 mode C ends at 0x3fc and 0x400 is the DMA A source window.
+        expect_read_resp(ADDR_C_BASE + (ARRAY_SIZE * ARRAY_SIZE * 4) + 12'h2, RESP_SLVERR, data);
         expect_read_resp(12'h600, RESP_SLVERR, data);
 
         expect_write_resp(ADDR_CFG, 32'h1, 4'h1, RESP_OKAY);

@@ -28,6 +28,7 @@ REGRESSION_UVM_TESTS ?= mini_tpu_smoke_test \
                         mini_tpu_busy_write_test \
                         mini_tpu_double_buffer_test \
                         mini_tpu_dma_test \
+                        mini_tpu_dma_error_test \
                         mini_tpu_8x8_stress_test \
                         mini_tpu_ral_smoke_test
 
@@ -58,6 +59,16 @@ compile: $(SIM_DIR)
 run: compile
 	cd $(SIM_DIR) && ./simv $(SIM_OPTS)
 
+clean-snapshot:
+	rm -rf $(SIM_DIR)/simv \
+	       $(SIM_DIR)/simv.daidir \
+	       $(SIM_DIR)/csrc \
+	       $(SIM_DIR)/vc_hdrs.h \
+	       $(SIM_DIR)/ucli.key \
+	       $(SIM_DIR)/DVEfiles
+
+clean-run: clean-snapshot run
+
 setup-run:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) run'
 
@@ -69,6 +80,9 @@ axi-setup-run:
 
 uvm-run:
 	$(MAKE) run TOP=tb_mini_tpu_uvm FLIST=../script/filelist_uvm.f TEST=$(UVM_TEST) UVM_OPTS="-ntb_opts uvm"
+
+uvm-clean-run:
+	$(MAKE) clean-run TOP=tb_mini_tpu_uvm FLIST=../script/filelist_uvm.f TEST=$(UVM_TEST) UVM_OPTS="-ntb_opts uvm"
 
 uvm-setup-run:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run'
@@ -84,7 +98,7 @@ uvm-cov-setup-run:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-cov-run'
 
 regression-summary:
-	bash script/gen_regression_summary.sh $(SIM_DIR) $(SIM_DIR)/regression_summary.txt
+	REGRESSION_UVM_TESTS="$(REGRESSION_UVM_TESTS)" bash script/gen_regression_summary.sh $(SIM_DIR) $(SIM_DIR)/regression_summary.txt
 
 regression:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) run'
@@ -95,6 +109,7 @@ regression:
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_busy_write_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_double_buffer_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_dma_test'
+	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_dma_error_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_8x8_stress_test'
 	bash -lc 'source ../../env/setup.sh && $(MAKE) uvm-run UVM_TEST=mini_tpu_ral_smoke_test'
 
@@ -124,7 +139,10 @@ clean-cov:
 	rm -rf $(SIM_DIR)/$(COV_DB_ROOT) \
 	       $(SIM_DIR)/$(COV_MERGED_DB) \
 	       $(SIM_DIR)/$(COV_REPORT_DIR) \
-	       $(SIM_DIR)/regression_summary.txt
+	       $(SIM_DIR)/regression_summary.txt \
+	       $(SIM_DIR)/run_*.log \
+	       $(SIM_DIR)/compile_*.log \
+	       $(SIM_DIR)/cm.log
 
 clean:
 	rm -rf $(SIM_DIR)/simv \
@@ -142,4 +160,4 @@ clean:
 	       $(SIM_DIR)/DVEfiles \
 	       $(SIM_DIR)/inter.vpd
 
-.PHONY: all compile run setup-run axi-run axi-setup-run uvm-run uvm-setup-run uvm-cov-run uvm-cov-report uvm-cov-setup-run regression regression-summary regression-cov regression-cov-all regression-8x8 clean-cov clean
+.PHONY: all compile run clean-snapshot clean-run setup-run axi-run axi-setup-run uvm-run uvm-clean-run uvm-setup-run uvm-cov-run uvm-cov-report uvm-cov-setup-run regression regression-summary regression-cov regression-cov-all regression-8x8 clean-cov clean
