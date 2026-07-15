@@ -29,6 +29,7 @@ package mini_tpu_pkg;
     `include "mini_tpu_double_buffer_test.sv"
     `include "mini_tpu_dma_test.sv"
     `include "mini_tpu_dma_error_test.sv"
+    `include "mini_tpu_dma_external_test.sv"
     `include "mini_tpu_8x8_stress_test.sv"
     `include "mini_tpu_ral_smoke_test.sv"
 

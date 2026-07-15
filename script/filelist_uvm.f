@@ -13,5 +13,6 @@
 ../rtl/mini_tpu_axi_lite.sv
 ../sva/mini_tpu_axi_lite_sva.sv
 ../tb/interface/mini_tpu_axi_if.sv
+../tb/mini_tpu_ext_mem_model.sv
 ../verif/pkg/mini_tpu_pkg.sv
 ../verif/top/tb_mini_tpu_uvm.sv

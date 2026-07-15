@@ -156,3 +156,14 @@ Real TPU designs use a much larger systolic matrix multiply unit. This project k
   - clear done/error sticky status bits independently and together.
 - Extend functional coverage with DMA target-bank, copy-mode, error-reason, source-write-while-busy, and clear-operation coverpoints.
 - Extend AXI-Lite SVA bind checks for DMA invalid-start error reporting, sticky status hold behavior, and source-staging write blocking while DMA is busy.
+
+## Milestone 15: External-Memory DMA Read Path
+
+- Extend `mini_tpu_dma.sv` with a small external read-master channel.
+- Add descriptor CSRs:
+  - `0x02c DMA_A_SRC_ADDR`: external A tile byte address.
+  - `0x030 DMA_B_SRC_ADDR`: external B tile byte address.
+  - `DMA_CFG[3]`: select external source mode instead of staging-window source mode.
+- Add `tb/mini_tpu_ext_mem_model.sv` and external-memory storage/tasks in `mini_tpu_axi_if`.
+- Add `mini_tpu_dma_external_test` to preload the testbench memory, program DMA descriptors, fetch A/B tiles through the read-master path, compute from the filled scratchpad bank, and compare C against the reference model.
+- Extend DMA coverage with a staging/external source-mode coverpoint.

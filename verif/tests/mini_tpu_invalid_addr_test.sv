@@ -24,6 +24,8 @@ class mini_tpu_invalid_addr_test extends mini_tpu_base_test;
         expect_read_resp(ADDR_DMA_CTRL, RESP_OKAY, data);
         expect_read_resp(ADDR_DMA_STATUS, RESP_OKAY, data);
         expect_read_resp(ADDR_DMA_CFG, RESP_OKAY, data);
+        expect_read_resp(ADDR_DMA_A_SRC_ADDR, RESP_OKAY, data);
+        expect_read_resp(ADDR_DMA_B_SRC_ADDR, RESP_OKAY, data);
         expect_read_resp(matrix_addr(ADDR_A_BASE, 0, 0), RESP_OKAY, data);
         expect_read_resp(matrix_addr(ADDR_B_BASE, 3, 3), RESP_OKAY, data);
         expect_read_resp(matrix_addr(ADDR_C_BASE, 1, 2), RESP_OKAY, data);
@@ -31,7 +33,7 @@ class mini_tpu_invalid_addr_test extends mini_tpu_base_test;
         expect_read_resp(matrix_addr(ADDR_DMA_B_SRC_BASE, 1, 1), RESP_OKAY, data);
 
         expect_read_resp(12'h00c, RESP_SLVERR, data);
-        expect_read_resp(12'h02c, RESP_SLVERR, data);
+        expect_read_resp(12'h034, RESP_SLVERR, data);
         expect_read_resp(12'h102, RESP_SLVERR, data);
         // In 8x8 mode C ends at 0x3fc and 0x400 is the DMA A source window.
         expect_read_resp(ADDR_C_BASE + (ARRAY_SIZE * ARRAY_SIZE * 4) + 12'h2, RESP_SLVERR, data);
@@ -39,10 +41,12 @@ class mini_tpu_invalid_addr_test extends mini_tpu_base_test;
 
         expect_write_resp(ADDR_CFG, 32'h1, 4'h1, RESP_OKAY);
         expect_write_resp(ADDR_DMA_CFG, 32'h7, 4'h1, RESP_OKAY);
+        expect_write_resp(ADDR_DMA_A_SRC_ADDR, 32'h1000, 4'h1, RESP_OKAY);
+        expect_write_resp(ADDR_DMA_B_SRC_ADDR, 32'h2000, 4'h1, RESP_OKAY);
         expect_write_resp(matrix_addr(ADDR_DMA_A_SRC_BASE, 0, 0), 32'h11, 4'h1, RESP_OKAY);
         expect_write_resp(matrix_addr(ADDR_DMA_B_SRC_BASE, 0, 0), 32'h22, 4'h1, RESP_OKAY);
         expect_write_resp(12'h00c, 32'h1, 4'h1, RESP_SLVERR);
-        expect_write_resp(12'h02c, 32'h1, 4'h1, RESP_SLVERR);
+        expect_write_resp(12'h034, 32'h1, 4'h1, RESP_SLVERR);
         expect_write_resp(12'h102, 32'h2, 4'h1, RESP_SLVERR);
         expect_write_resp(ADDR_STATUS, 32'h3, 4'h1, RESP_SLVERR);
         expect_write_resp(ADDR_DMA_STATUS, 32'h3, 4'h1, RESP_SLVERR);

@@ -35,6 +35,13 @@ module tb_axi_lite_smoke;
     logic [1:0]                rresp;
     logic                      rvalid;
     logic                      rready;
+    logic [31:0]               dma_mem_araddr;
+    logic                      dma_mem_arvalid;
+    logic                      dma_mem_arready;
+    logic [DATA_WIDTH-1:0]     dma_mem_rdata;
+    logic [1:0]                dma_mem_rresp;
+    logic                      dma_mem_rvalid;
+    logic                      dma_mem_rready;
 
     logic signed [7:0]  a_matrix [ARRAY_SIZE][ARRAY_SIZE];
     logic signed [7:0]  b_matrix [ARRAY_SIZE][ARRAY_SIZE];
@@ -68,8 +75,20 @@ module tb_axi_lite_smoke;
         .s_axi_rdata   (rdata),
         .s_axi_rresp   (rresp),
         .s_axi_rvalid  (rvalid),
-        .s_axi_rready  (rready)
+        .s_axi_rready  (rready),
+        .dma_mem_araddr (dma_mem_araddr),
+        .dma_mem_arvalid(dma_mem_arvalid),
+        .dma_mem_arready(dma_mem_arready),
+        .dma_mem_rdata  (dma_mem_rdata),
+        .dma_mem_rresp  (dma_mem_rresp),
+        .dma_mem_rvalid (dma_mem_rvalid),
+        .dma_mem_rready (dma_mem_rready)
     );
+
+    assign dma_mem_arready = 1'b0;
+    assign dma_mem_rdata = '0;
+    assign dma_mem_rresp = 2'b00;
+    assign dma_mem_rvalid = 1'b0;
 
     initial begin
         clk = 1'b0;

@@ -143,7 +143,7 @@ class mini_tpu_dma_error_test extends mini_tpu_base_test;
         bit          source_write_busy,
         int unsigned clear_op
     );
-        env.cov.sample_dma(target_bank, copy_mode, error_reason, source_write_busy, clear_op);
+        env.cov.sample_dma(target_bank, copy_mode, 0, error_reason, source_write_busy, clear_op);
     endfunction
 
 endclass

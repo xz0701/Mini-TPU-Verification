@@ -21,6 +21,7 @@ Current focused tests:
 - `mini_tpu_double_buffer_test`
 - `mini_tpu_dma_test`
 - `mini_tpu_dma_error_test`
+- `mini_tpu_dma_external_test`
 - `mini_tpu_8x8_stress_test`
 - `mini_tpu_ral_smoke_test`
 

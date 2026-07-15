@@ -11,10 +11,12 @@ rtl/
   tpu_mac_cell.sv
   systolic_array.sv
   mini_tpu_core.sv
+  mini_tpu_dma.sv
   mini_tpu_scratchpad.sv
   mini_tpu_axi_lite.sv
 tb/
   mini_tpu_config.svh
+  mini_tpu_ext_mem_model.sv
   tb_systolic_smoke.sv
   tb_axi_lite_smoke.sv
 script/
@@ -76,7 +78,9 @@ make regression-8x8
 0x008 CFG     bit0=load bank, bit1=compute bank, bit2=active compute bank
 0x020 DMA_CTRL    bit0=start, bit1=clear done, bit2=clear error
 0x024 DMA_STATUS  bit0=busy, bit1=done sticky, bit2=error sticky
-0x028 DMA_CFG     bit0=target bank, bit1=copy A, bit2=copy B
+0x028 DMA_CFG     bit0=target bank, bit1=copy A, bit2=copy B, bit3=external source mode
+0x02c DMA_A_SRC_ADDR  external A tile byte address
+0x030 DMA_B_SRC_ADDR  external B tile byte address
 0x100 A bank, one signed int8 per 32-bit word
 0x200 B bank, one signed int8 per 32-bit word
 0x300 C bank, one signed int32 per 32-bit word
@@ -86,7 +90,7 @@ make regression-8x8
 
 The A/B scratchpad is double-buffered. `CFG.load_bank` selects which input bank AXI reads and writes use, while `CFG.compute_bank` selects the input bank used by the next TPU operation. During an active compute, writes to the inactive bank are accepted so software or a future DMA path can preload the next tile.
 
-The first DMA block is descriptor controlled through AXI-Lite. Software stages source A/B tiles in the `0x400` and `0x500` windows, programs `DMA_CFG`, then starts a copy into the selected inactive A/B scratchpad bank. This models the data-movement path before adding a full external AXI master.
+The DMA block is descriptor controlled through AXI-Lite. In staging mode, software writes source A/B tiles in the `0x400` and `0x500` windows, programs `DMA_CFG`, then starts a copy into the selected inactive A/B scratchpad bank. In external source mode, software programs `DMA_A_SRC_ADDR` and `DMA_B_SRC_ADDR`; the DMA issues read-master requests to `mini_tpu_ext_mem_model` and fills the scratchpad from external memory.
 
 DMA negative tests cover no-copy starts, busy restarts, source-staging writes while busy, active-bank conflicts, and done/error sticky clear behavior.
 
@@ -125,6 +129,8 @@ CFG        0x008, load-bank / compute-bank selection
 DMA_CTRL   0x020, DMA start / clear sticky fields
 DMA_STATUS 0x024, DMA busy / done / error fields
 DMA_CFG    0x028, DMA target-bank and A/B copy enables
+DMA A addr  0x02c, external A tile source byte address
+DMA B addr  0x030, external B tile source byte address
 A memory   0x100, RW scratchpad bank
 B memory   0x200, RW scratchpad bank
 C memory   0x300, RO result bank
@@ -173,3 +179,16 @@ sim/cov_merged.vdb            merged coverage database
 sim/cov_report/               merged HTML/text URG report
 sim/regression_summary.txt    pass/fail and coverage summary
 ```
+
+## Signoff
+
+The final signoff gate is:
+
+```sh
+make regression-cov-all
+```
+
+Current signoff notes are captured in:
+
+- `signoff_checklist.md`
+- `project_summary.md`

@@ -44,7 +44,18 @@ module tb_mini_tpu_uvm;
         .s_axi_rdata   (axi_if.rdata),
         .s_axi_rresp   (axi_if.rresp),
         .s_axi_rvalid  (axi_if.rvalid),
-        .s_axi_rready  (axi_if.rready)
+        .s_axi_rready  (axi_if.rready),
+        .dma_mem_araddr (axi_if.dma_mem_araddr),
+        .dma_mem_arvalid(axi_if.dma_mem_arvalid),
+        .dma_mem_arready(axi_if.dma_mem_arready),
+        .dma_mem_rdata  (axi_if.dma_mem_rdata),
+        .dma_mem_rresp  (axi_if.dma_mem_rresp),
+        .dma_mem_rvalid (axi_if.dma_mem_rvalid),
+        .dma_mem_rready (axi_if.dma_mem_rready)
+    );
+
+    mini_tpu_ext_mem_model u_ext_mem (
+        .mem_if(axi_if)
     );
 
     initial begin

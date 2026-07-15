@@ -30,7 +30,15 @@ module mini_tpu_axi_lite #(
     output logic [DATA_WIDTH-1:0]        s_axi_rdata,
     output logic [1:0]                   s_axi_rresp,
     output logic                         s_axi_rvalid,
-    input  logic                         s_axi_rready
+    input  logic                         s_axi_rready,
+
+    output logic [31:0]                  dma_mem_araddr,
+    output logic                         dma_mem_arvalid,
+    input  logic                         dma_mem_arready,
+    input  logic [DATA_WIDTH-1:0]        dma_mem_rdata,
+    input  logic [1:0]                   dma_mem_rresp,
+    input  logic                         dma_mem_rvalid,
+    output logic                         dma_mem_rready
 );
 
     localparam logic [ADDR_WIDTH-1:0] ADDR_CTRL   = 12'h000;
@@ -39,6 +47,8 @@ module mini_tpu_axi_lite #(
     localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_CTRL   = 12'h020;
     localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_STATUS = 12'h024;
     localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_CFG    = 12'h028;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_A_SRC_ADDR = 12'h02c;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_B_SRC_ADDR = 12'h030;
     localparam logic [ADDR_WIDTH-1:0] ADDR_A_BASE = 12'h100;
     localparam logic [ADDR_WIDTH-1:0] ADDR_B_BASE = 12'h200;
     localparam logic [ADDR_WIDTH-1:0] ADDR_C_BASE = 12'h300;
@@ -84,12 +94,17 @@ module mini_tpu_axi_lite #(
     logic dma_cfg_we;
     logic dma_src_a_we;
     logic dma_src_b_we;
+    logic dma_a_ext_addr_we;
+    logic dma_b_ext_addr_we;
     logic dma_busy;
     logic dma_done_sticky;
     logic dma_error_sticky;
     logic dma_target_bank;
     logic dma_copy_a;
     logic dma_copy_b;
+    logic dma_external_mode;
+    logic [31:0] dma_a_ext_addr;
+    logic [31:0] dma_b_ext_addr;
     logic dma_a_we;
     logic dma_b_we;
     logic dma_bank_sel;
@@ -112,6 +127,8 @@ module mini_tpu_axi_lite #(
                            MATRIX_IDX_W'(matrix_index(aw_addr_q, ADDR_A_BASE));
     assign dma_ctrl_we = write_fire && (aw_addr_q == ADDR_DMA_CTRL) && w_strb_q[0];
     assign dma_cfg_we = write_fire && (aw_addr_q == ADDR_DMA_CFG) && w_strb_q[0];
+    assign dma_a_ext_addr_we = write_fire && (aw_addr_q == ADDR_DMA_A_SRC_ADDR) && w_strb_q[0];
+    assign dma_b_ext_addr_we = write_fire && (aw_addr_q == ADDR_DMA_B_SRC_ADDR) && w_strb_q[0];
     assign dma_src_a_we = write_fire && is_matrix_addr(aw_addr_q, ADDR_DMA_A_SRC_BASE) && w_strb_q[0] && !dma_busy;
     assign dma_src_b_we = write_fire && is_matrix_addr(aw_addr_q, ADDR_DMA_B_SRC_BASE) && w_strb_q[0] && !dma_busy;
     assign dma_src_wr_idx = is_matrix_addr(aw_addr_q, ADDR_DMA_A_SRC_BASE) ?
@@ -158,6 +175,9 @@ module mini_tpu_axi_lite #(
         .ctrl_wdata_i   (w_data_q),
         .cfg_we_i       (dma_cfg_we),
         .cfg_wdata_i    (w_data_q),
+        .a_ext_addr_we_i(dma_a_ext_addr_we),
+        .b_ext_addr_we_i(dma_b_ext_addr_we),
+        .ext_addr_wdata_i(w_data_q),
         .src_a_we_i     (dma_src_a_we),
         .src_b_we_i     (dma_src_b_we),
         .src_wr_idx_i   (dma_src_wr_idx),
@@ -170,13 +190,23 @@ module mini_tpu_axi_lite #(
         .target_bank_o  (dma_target_bank),
         .copy_a_o       (dma_copy_a),
         .copy_b_o       (dma_copy_b),
+        .external_mode_o(dma_external_mode),
+        .a_ext_addr_o   (dma_a_ext_addr),
+        .b_ext_addr_o   (dma_b_ext_addr),
         .dma_a_we_o     (dma_a_we),
         .dma_b_we_o     (dma_b_we),
         .dma_bank_sel_o (dma_bank_sel),
         .dma_wr_idx_o   (dma_wr_idx),
         .dma_wr_data_o  (dma_wr_data),
         .src_a_matrix_o (dma_src_a_matrix),
-        .src_b_matrix_o (dma_src_b_matrix)
+        .src_b_matrix_o (dma_src_b_matrix),
+        .mem_araddr_o   (dma_mem_araddr),
+        .mem_arvalid_o  (dma_mem_arvalid),
+        .mem_arready_i  (dma_mem_arready),
+        .mem_rdata_i    (dma_mem_rdata),
+        .mem_rresp_i    (dma_mem_rresp),
+        .mem_rvalid_i   (dma_mem_rvalid),
+        .mem_rready_o   (dma_mem_rready)
     );
 
     mini_tpu_core #(
@@ -252,6 +282,8 @@ module mini_tpu_axi_lite #(
                     end
                 end else if ((aw_addr_q == ADDR_DMA_CTRL) ||
                              (aw_addr_q == ADDR_DMA_CFG) ||
+                             (aw_addr_q == ADDR_DMA_A_SRC_ADDR) ||
+                             (aw_addr_q == ADDR_DMA_B_SRC_ADDR) ||
                              is_matrix_addr(aw_addr_q, ADDR_DMA_A_SRC_BASE) ||
                              is_matrix_addr(aw_addr_q, ADDR_DMA_B_SRC_BASE)) begin
                     s_axi_bresp <= RESP_OKAY;
@@ -314,6 +346,11 @@ module mini_tpu_axi_lite #(
             read_data[0] = dma_target_bank;
             read_data[1] = dma_copy_a;
             read_data[2] = dma_copy_b;
+            read_data[3] = dma_external_mode;
+        end else if (addr == ADDR_DMA_A_SRC_ADDR) begin
+            read_data = dma_a_ext_addr;
+        end else if (addr == ADDR_DMA_B_SRC_ADDR) begin
+            read_data = dma_b_ext_addr;
         end else if (is_matrix_addr(addr, ADDR_A_BASE)) begin
             idx = matrix_index(addr, ADDR_A_BASE);
             row = idx / ARRAY_SIZE;
@@ -349,6 +386,8 @@ module mini_tpu_axi_lite #(
             (addr == ADDR_DMA_CTRL) ||
             (addr == ADDR_DMA_STATUS) ||
             (addr == ADDR_DMA_CFG) ||
+            (addr == ADDR_DMA_A_SRC_ADDR) ||
+            (addr == ADDR_DMA_B_SRC_ADDR) ||
             is_matrix_addr(addr, ADDR_A_BASE) ||
             is_matrix_addr(addr, ADDR_B_BASE) ||
             is_matrix_addr(addr, ADDR_C_BASE) ||

@@ -78,6 +78,7 @@ class mini_tpu_cov extends uvm_subscriber #(mini_tpu_item);
     covergroup dma_cg with function sample(
         int unsigned target_bank,
         int unsigned copy_mode,
+        int unsigned source_mode,
         int unsigned error_reason,
         bit          source_write_busy,
         int unsigned clear_op
@@ -94,6 +95,11 @@ class mini_tpu_cov extends uvm_subscriber #(mini_tpu_item);
             bins a_only = {1};
             bins b_only = {2};
             bins both   = {3};
+        }
+
+        cp_source_mode: coverpoint source_mode {
+            bins staging  = {0};
+            bins external = {1};
         }
 
         cp_error_reason: coverpoint error_reason {
@@ -172,11 +178,12 @@ class mini_tpu_cov extends uvm_subscriber #(mini_tpu_item);
     virtual function void sample_dma(
         int unsigned target_bank,
         int unsigned copy_mode,
+        int unsigned source_mode,
         int unsigned error_reason,
         bit          source_write_busy,
         int unsigned clear_op
     );
-        dma_cg.sample(target_bank, copy_mode, error_reason, source_write_busy, clear_op);
+        dma_cg.sample(target_bank, copy_mode, source_mode, error_reason, source_write_busy, clear_op);
         dma_sample_count++;
     endfunction
 

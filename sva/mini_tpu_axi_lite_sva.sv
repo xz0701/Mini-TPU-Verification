@@ -53,6 +53,8 @@ module mini_tpu_axi_lite_sva #(
     localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_CTRL   = 12'h020;
     localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_STATUS = 12'h024;
     localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_CFG    = 12'h028;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_A_SRC_ADDR = 12'h02c;
+    localparam logic [ADDR_WIDTH-1:0] ADDR_DMA_B_SRC_ADDR = 12'h030;
     localparam logic [ADDR_WIDTH-1:0] ADDR_A_BASE = 12'h100;
     localparam logic [ADDR_WIDTH-1:0] ADDR_B_BASE = 12'h200;
     localparam logic [ADDR_WIDTH-1:0] ADDR_C_BASE = 12'h300;
@@ -91,6 +93,8 @@ module mini_tpu_axi_lite_sva #(
                               (addr == ADDR_CFG) ||
                               (addr == ADDR_DMA_CTRL) ||
                               (addr == ADDR_DMA_CFG) ||
+                              (addr == ADDR_DMA_A_SRC_ADDR) ||
+                              (addr == ADDR_DMA_B_SRC_ADDR) ||
                               is_matrix_addr(addr, ADDR_A_BASE) ||
                               is_matrix_addr(addr, ADDR_B_BASE) ||
                               is_matrix_addr(addr, ADDR_DMA_A_SRC_BASE) ||
@@ -104,6 +108,8 @@ module mini_tpu_axi_lite_sva #(
                              (addr == ADDR_DMA_CTRL) ||
                              (addr == ADDR_DMA_STATUS) ||
                              (addr == ADDR_DMA_CFG) ||
+                             (addr == ADDR_DMA_A_SRC_ADDR) ||
+                             (addr == ADDR_DMA_B_SRC_ADDR) ||
                              is_matrix_addr(addr, ADDR_A_BASE) ||
                              is_matrix_addr(addr, ADDR_B_BASE) ||
                              is_matrix_addr(addr, ADDR_C_BASE) ||

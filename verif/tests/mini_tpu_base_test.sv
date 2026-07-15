@@ -12,6 +12,8 @@ class mini_tpu_base_test extends uvm_test;
     localparam bit [11:0] ADDR_DMA_CTRL   = 12'h020;
     localparam bit [11:0] ADDR_DMA_STATUS = 12'h024;
     localparam bit [11:0] ADDR_DMA_CFG    = 12'h028;
+    localparam bit [11:0] ADDR_DMA_A_SRC_ADDR = 12'h02c;
+    localparam bit [11:0] ADDR_DMA_B_SRC_ADDR = 12'h030;
     localparam bit [11:0] ADDR_A_BASE = 12'h100;
     localparam bit [11:0] ADDR_B_BASE = 12'h200;
     localparam bit [11:0] ADDR_C_BASE = 12'h300;
@@ -271,7 +273,7 @@ class mini_tpu_base_test extends uvm_test;
     task automatic poll_dma_done();
         bit [31:0] status;
 
-        for (int timeout = 0; timeout < (ARRAY_SIZE * ARRAY_SIZE * 4); timeout++) begin
+        for (int timeout = 0; timeout < (ARRAY_SIZE * ARRAY_SIZE * 12); timeout++) begin
             expect_read_resp(ADDR_DMA_STATUS, RESP_OKAY, status);
             if (status[2]) begin
                 `uvm_error("MINI_TPU_BASE", $sformatf("DMA error sticky observed status=0x%0h", status))
